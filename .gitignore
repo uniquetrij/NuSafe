@@ -1,0 +1,7 @@
+**__pycache__/
+.idea/
+.test/
+.data/.tmp
+.data/.persistence
+.env
+LICENSE
