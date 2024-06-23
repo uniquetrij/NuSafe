@@ -1,3 +1,5 @@
+import json
+
 import env
 
 
@@ -48,42 +50,61 @@ def product_analysis_schema(*concerns: str, **categorized_concerns: set[str] | t
         }
     })
 
-    # concern properties
+    # concern properties - allergens
     schema["properties"].update({
         "concerns": {
             "type": "object",
             "description": env.schemas.CONCERNS_INSTRUCTION,
             "properties": {
-                group: {
-                    "type": "object",
-                    "description": env.schemas.CONCERNS_GROUP_INSTRUCTION.format(group=group),
-                    "properties": {
-                        concern: {
-                            "type": "object",
-                            "description": env.schemas.CONCERNS_ITEM_INSTRUCTION.format(concern=concern),
-                            "properties": {
-                                "constituents": {
-                                    "type": "array",
-                                    "description": env.schemas.CONSTITUENTS_INSTRUCTION.format(concern=concern),
-                                    "items": {
-                                        "type": "object",
-                                        "description": env.schemas.CONSTITUENTS_ITEM_INSTRUCTION.format(concern=concern),
-                                        "properties": __process_config(
-                                            env.schemas.CONSTITUENTS_ITEM_INDICATORS, concern=concern
-                                        ),
-                                    },
-                                },
-                                **(
-                                    __process_config(env.schemas.CONCERNS_ITEM_INDICATORS, concern=concern)
-                                ),
-                            },
-                        }
-                        for concern in set(concerns)
-                    },
+                'allergens': {
+                    "type": "array",
+                    "description": env.schemas.CONCERNS_ALLERGENS_INSTRUCTION,
+                    "items": {
+                        "type": "string",
+                        "description": env.schemas.CONCERNS_ALLERGENS_ITEM_INSTRUCTION
+                    }
                 }
-                for group, concerns in categorized_concerns.items()
             },
         },
+    })
+
+    # concern properties - customs
+    schema["properties"]["concerns"]["properties"].update({
+        group: {
+            "type": "object",
+            "description": env.schemas.CONCERNS_GROUP_INSTRUCTION.format(
+                group=group),
+            "properties": {
+                concern: {
+                    "type": "object",
+                    "description": env.schemas.CONCERNS_ITEM_INSTRUCTION.format(
+                        concern=concern),
+                    "properties": {
+                        "constituents": {
+                            "type": "array",
+                            "description": env.schemas.CONSTITUENTS_INSTRUCTION.format(
+                                concern=concern),
+                            "items": {
+                                "type": "object",
+                                "description": env.schemas.CONSTITUENTS_ITEM_INSTRUCTION.format(
+                                    concern=concern),
+                                "properties": __process_config(
+                                    env.schemas.CONSTITUENTS_ITEM_INDICATORS,
+                                    concern=concern
+                                ),
+                            },
+                        },
+                        **(
+                            __process_config(
+                                env.schemas.CONCERNS_ITEM_INDICATORS,
+                                concern=concern)
+                        ),
+                    },
+                }
+                for concern in set(concerns)
+            },
+        }
+        for group, concerns in categorized_concerns.items()
     })
 
     # health properties
@@ -137,5 +158,6 @@ def product_analysis_schema(*concerns: str, **categorized_concerns: set[str] | t
 
 
 if __name__ == "__main__":
-    print(type(product_analysis_schema(chronic=env.schemas.CHRONIC)))
-    # print(json.dumps(product_analysis_schema(chronic=env.schemas.CHRONIC), indent=2, ensure_ascii=False))
+    # print(type(product_analysis_schema(optionals_1=env.schemas.CHRONIC)))
+    print(json.dumps(product_analysis_schema(optionals_1=env.schemas.CHRONIC, optionals_2=env.schemas.ACUTE), indent=2,
+                     ensure_ascii=False))

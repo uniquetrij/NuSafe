@@ -39,9 +39,9 @@ def gemini(schema: dict = None, image: str | Image.Image = None) -> dict:
     response = genai.GenerativeModel(env.GEMINI_FLASH).generate_content(
         [prompt, image or ''],
         generation_config=GenerationConfig(
-            temperature=0.02,
+            temperature=0.10,
             top_k=64,
-            top_p=0.01,
+            top_p=0.05,
             # max_output_tokens=1025,
             response_mime_type='application/json',
             response_schema=schema,
