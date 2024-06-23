@@ -2,9 +2,10 @@ import base64
 import itertools
 import json
 import logging
-import re
+import os
 from io import BytesIO
 from typing import Optional
+from urllib.parse import urlparse
 
 import google.generativeai as genai
 import requests
@@ -26,41 +27,41 @@ def gemini(schema: dict = None, image: str | Image.Image = None) -> dict:
     prompt = f'```json {json.dumps(schema, indent=2)} ```'
 
     if isinstance(image, str):
-        if __is_url(image):
+        if __is_path(image):
+            image = __path_to_image(image)
+        elif __is_url(image):
             image = __url_to_image(image)
-        if __is_base64(image):
+        elif __is_base64(image):
             image = __base64_to_image(image)
 
     genai.configure(api_key=next(__keys))
+
     response = genai.GenerativeModel(env.GEMINI_FLASH).generate_content(
         [prompt, image or ''],
         generation_config=GenerationConfig(
-            temperature=0,
+            temperature=0.02,
             top_k=64,
-            top_p=0,
+            top_p=0.01,
             # max_output_tokens=1025,
             response_mime_type='application/json',
             response_schema=schema,
         ))
     response.resolve()
+    _log.debug(response.candidates[0].safety_ratings)
     _log.debug(response.text)
     return json.loads(response.text)
 
 
-def __is_url(string):
-    # Regular expression to match a typical URL pattern
-    url_regex = re.compile(
-        r'^(?:http|ftp)s?://'  # http:// or https://
-        r'(?:(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)+(?:[A-Z]{2,6}\.?|[A-Z0-9-]{2,}\.?)|'  # domain...
-        r'localhost|'  # localhost...
-        r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}|'  # ...or ipv4
-        r'\[?[A-F0-9]*:[A-F0-9:]+]?)'  # ...or ipv6
-        r'(?::\d+)?'  # optional port
-        r'(?:/?|[/?]\S+)$', re.IGNORECASE)
-    return re.match(url_regex, string) is not None
+def __is_path(string: str):
+    return os.path.isfile(string) or os.path.isdir(string)
 
 
-def __is_base64(string):
+def __is_url(string: str):
+    parsed = urlparse(string)
+    return parsed.scheme and parsed.netloc
+
+
+def __is_base64(string: str):
     try:
         # Remove base64 header if present
         if "base64," in string:
@@ -70,6 +71,10 @@ def __is_base64(string):
         return True
     except Exception:
         return False
+
+
+def __path_to_image(path_string: str) -> Optional[Image.Image]:
+    return Image.open(path_string)
 
 
 def __base64_to_image(base64_string: str) -> Optional[Image.Image]:
@@ -110,6 +115,6 @@ def __url_to_image(url_string: str) -> Optional[Image.Image]:
 
 if __name__ == '__main__':
     # print(type(env.schemas.DEFAULT))
-    print(json.dumps(gemini()['introduction'], indent=2, ensure_ascii=False))
-
-
+    # print(json.dumps(gemini()['introduction'], indent=2, ensure_ascii=False))
+    image = __path_to_image(r'C:\Users\uniquetrij\Downloads\NuSafe\.data\.tmp\prescription.png')
+    image.show("OK")
