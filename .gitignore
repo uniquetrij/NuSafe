@@ -3,5 +3,5 @@
 .test/
 .data/.tmp
 .data/.persistence
-.env
+.env*
 LICENSE

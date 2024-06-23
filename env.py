@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from types import ModuleType
 from typing import Any
 
+from box import Box
 from dotenv import dotenv_values, find_dotenv
 
 
@@ -51,10 +52,17 @@ class __(ModuleType):
                     f.write(f'{" " * 4 * i}class {cls}:\n')
                     i += 1
 
-            for k, v in env_values.items():
-                source[k] = __convert_value(v)
-                if prefix is not None or k != '.include':
-                    f.write(f'{" " * 4 * i}{k}: {type(source[k]).__name__}\n')
+            for key, value in env_values.items():
+                value = __convert_value(value)
+                value_type = type(value)
+
+                tmp_source = source
+                for cls in prefix.split('.') if prefix else []:
+                    tmp_source[cls] = tmp_source.get(cls, Box())
+                    tmp_source = tmp_source[cls]
+                tmp_source[key] = value
+                if prefix is not None or key != '.include':
+                    f.write(f'{" " * 4 * i}{key}: {value_type.__name__}\n')
 
     __setattr__ = __raise_value_error
     __update(vars(), dotenv_values(), True)
