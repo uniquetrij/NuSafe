@@ -1,6 +1,9 @@
 import json
+import logging
 
 import env
+
+_log = logging.getLogger(__name__)
 
 
 def __process_args(*concerns: str, **categorized_concerns: set[str] | tuple[str] | list[str]) -> dict:

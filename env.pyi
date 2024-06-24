@@ -3,7 +3,6 @@ DOMAIN_URL: str
 STATIC_URL: str
 WEBAPP_URL: str
 WEBAPP_NAME: str
-APP_ACCESS_SECRET: str
 DATA_PATH: str
 TMP_FILES_PATH: str
 PERSISTENCE_PATH: str
@@ -43,3 +42,5 @@ class schemas:
     CHRONIC: list
     ACUTE: list
     ALLERGY: list
+BOT_MENTION_MD: str
+BOT_MENTION: str
