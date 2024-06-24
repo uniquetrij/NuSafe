@@ -25,4 +25,6 @@ async def __on_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
         pass
 
 
+
+
 application.add_handler(MessageHandler(filters.PHOTO, __on_photo))

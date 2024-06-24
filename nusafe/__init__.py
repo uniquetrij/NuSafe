@@ -23,7 +23,7 @@ def __load():
         raise
     import_module(f"{__name__}")
     package_dir = Path(__file__).resolve().parent
-    for (_, module_name, _) in iter_modules([package_dir]):
+    for (_, module_name, _) in iter_modules([str(package_dir)]):
         # import the module and iterate through its attributes
         module = import_module(f"{__name__}.{module_name}")
         for attribute_name in dir(module):
@@ -34,6 +34,12 @@ def __load():
 
 
 async def __setup_bot(bot: ExtBot):
+    # await bot.set_my_description('')
+    await bot.set_chat_menu_button(
+        menu_button=MenuButtonWebApp(
+            env.WEBAPP_NAME,
+            WebAppInfo(env.WEBAPP_URL)))
+
     pass
 
 

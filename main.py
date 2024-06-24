@@ -4,7 +4,7 @@ from contextlib import suppress
 from threading import Thread
 
 import colorlog
-from flask import Flask, request
+from flask import Flask
 
 import env
 import nusafe
