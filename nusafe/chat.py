@@ -10,7 +10,7 @@ from nusafe import *
 async def __on_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
     photo_file: File = await update.message.photo[-1].get_file()
     text = ai.gemini(product_analysis_schema(
-        chronic=env.schemas.CHRONIC, acute=env.schemas.ACUTE, allergens=env.schemas.ALLERGY), photo_file.file_path)
+        chronic=env.schemas.CHRONIC, acute=env.schemas.ACUTE, allergies=env.schemas.ALLERGY), photo_file.file_path)
     text = json.dumps(text, indent=4, ensure_ascii=False)
     try:
         while text:

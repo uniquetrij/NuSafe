@@ -12,6 +12,8 @@ def __process_args(*concerns: str, **categorized_concerns: set[str] | tuple[str]
         pass
     else:
         categorized_concerns = {}
+    if 'allergens' in categorized_concerns.keys():
+        raise KeyError
     return categorized_concerns
 
 

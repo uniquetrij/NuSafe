@@ -3,5 +3,6 @@
 .test/
 .data/.tmp
 .data/.persistence
-.env*
+.env
+env.pyi
 LICENSE
