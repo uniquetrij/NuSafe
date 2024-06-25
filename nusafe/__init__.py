@@ -35,10 +35,10 @@ def __load():
 
 async def __setup_bot(bot: ExtBot):
     # await bot.set_my_description('')
-    await bot.set_chat_menu_button(
-        menu_button=MenuButtonWebApp(
-            env.WEBAPP_NAME,
-            WebAppInfo(env.WEBAPP_URL)))
+    # await bot.set_chat_menu_button(
+    #     menu_button=MenuButtonWebApp(
+    #         env.WEBAPP_NAME, WebAppInfo()
+    #     ))
 
     pass
 

@@ -9,7 +9,7 @@ from flask import Flask, request
 import ai
 import env
 import nusafe
-from ai import product_analysis_schema
+from ai.schema import instruction_schema
 
 app = Flask(__name__, static_url_path='/static', static_folder='.data/.tmp')
 
@@ -20,6 +20,7 @@ _log = logging.getLogger(Flask.__name__)
 
 @app.route('/')
 def root():
+    _log.debug(request.url)
     return 'ok'
 
 
@@ -27,7 +28,7 @@ def root():
 def lens():
     image = request.json.get('image', None)
     concerns = request.json.get('concerns', {})
-    text = ai.gemini(product_analysis_schema(**concerns), image)
+    text = ai.gemini(instruction_schema(**concerns), image)
 
     return text
 

@@ -13,7 +13,6 @@ from PIL import Image
 from google.generativeai import GenerationConfig
 
 import env
-from ai.schemas import product_analysis_schema
 
 _log = logging.getLogger(__name__)
 
@@ -22,7 +21,7 @@ __keys = itertools.cycle(env.GEMINI_KEYS)
 
 def gemini(schema: dict = None, image: str | Image.Image = None) -> dict:
     if schema is None:
-        schema = env.schemas.DEFAULT
+        schema = env.schema.DEFAULT
 
     prompt = f'```json {json.dumps(schema, indent=2)} ```'
 
@@ -39,17 +38,25 @@ def gemini(schema: dict = None, image: str | Image.Image = None) -> dict:
     response = genai.GenerativeModel(env.GEMINI_FLASH).generate_content(
         [prompt, image or ''],
         generation_config=GenerationConfig(
-            temperature=0.10,
+            temperature=0,
             top_k=64,
-            top_p=0.05,
-            # max_output_tokens=1025,
+            top_p=0,
+            # max_output_tokens=4096 * 4,
             response_mime_type='application/json',
             response_schema=schema,
         ))
     response.resolve()
-    _log.debug(response.candidates[0].safety_ratings)
     _log.debug(response.text)
-    return json.loads(response.text)
+    try:
+        return json.loads(response.text)
+    except json.decoder.JSONDecodeError as e:
+        match e.msg:
+            case 'Extra data':
+                return json.loads(response.text.strip()[:-1])
+            case 'Expecting \',\' delimiter':
+                return json.loads(response.text.strip() + '}')
+            case _:
+                raise e
 
 
 def __is_path(string: str):
