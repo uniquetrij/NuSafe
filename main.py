@@ -27,8 +27,8 @@ def root():
 @app.route('/lens', methods=['POST'])
 def lens():
     image = request.json.get('image', None)
-    concerns = request.json.get('concerns', {})
-    text = ai.gemini(instruction_schema(**concerns), image)
+    members = request.json.get('members', {})
+    text = ai.gemini(instruction_schema(**members), image)
 
     return text
 
