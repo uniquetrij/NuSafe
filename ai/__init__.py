@@ -19,11 +19,22 @@ _log = logging.getLogger(__name__)
 __keys = itertools.cycle(env.GEMINI_KEYS)
 
 
-def gemini(schema: dict = None, image: str | Image.Image = None) -> dict:
-    if schema is None:
-        schema = env.schema.DEFAULT
+def __fix_response(response):
+    genai.configure(api_key=next(__keys))
+    response = genai.GenerativeModel(env.GEMINI_FLASH).generate_content(
+        ['auto fix json', response.text],
+        generation_config=GenerationConfig(
+            temperature=0.0,
+            top_k=0,
+            top_p=0.0,
+            response_mime_type='application/json',
+        ))
+    response.resolve()
+    return json.loads(response.text)
 
-    prompt = f'```json {json.dumps(schema, indent=2)} ```'
+
+def gemini(schema: dict, image: str | Image.Image) -> dict:
+    prompt = f'Follow JSON schema. <JSONSchema>{json.dumps(schema)}</JSONSchema>'
 
     if isinstance(image, str):
         if __is_path(image):
@@ -35,28 +46,20 @@ def gemini(schema: dict = None, image: str | Image.Image = None) -> dict:
 
     genai.configure(api_key=next(__keys))
 
-    response = genai.GenerativeModel(env.GEMINI_FLASH).generate_content(
-        [prompt, image or ''],
+    response = genai.GenerativeModel(env.GEMINI_PRO).generate_content(
+        [prompt, image],
         generation_config=GenerationConfig(
-            temperature=0,
+            temperature=0.25,
             top_k=64,
-            top_p=0,
-            # max_output_tokens=4096 * 4,
+            top_p=0.95,
             response_mime_type='application/json',
-            response_schema=schema,
         ))
     response.resolve()
     _log.debug(response.text)
     try:
         return json.loads(response.text)
     except json.decoder.JSONDecodeError as e:
-        match e.msg:
-            case 'Extra data':
-                return json.loads(response.text.strip()[:-1])
-            case 'Expecting \',\' delimiter':
-                return json.loads(response.text.strip() + '}')
-            case _:
-                raise e
+        return __fix_response(response)
 
 
 def __is_path(string: str):
@@ -120,8 +123,4 @@ def __url_to_image(url_string: str) -> Optional[Image.Image]:
         return None
 
 
-if __name__ == '__main__':
-    # print(type(env.schemas.DEFAULT))
-    # print(json.dumps(gemini()['introduction'], indent=2, ensure_ascii=False))
-    image = __path_to_image(r'C:\Users\uniquetrij\Downloads\NuSafe\.data\.tmp\prescription.png')
-    image.show("OK")
+

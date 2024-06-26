@@ -1,237 +1,115 @@
 import json
 
-import env
+type = "type"
+description = "description"
+properties = "properties"
+object = "object"
+string = "string"
+number = "number"
+array = "array"
+enum = "enum"
+items = "items"
+required = "required"
+true = "true"
+minimum = "minimum"
+maximum = "maximum"
+multipleOf = "multipleOf"
 
 
-def __format_schema_properties(d: dict[str, tuple[str]], **kwargs: str) -> dict:
+def instruction_schema(locale: str = 'hi', **members: dict[str, dict[str, ...]]):
     return {
-        field: {
-            "type": datatype if datatype not in ['date-time'] else 'string',
-            "description": description.format(**kwargs),
-            **(dict(enum=enum) if enum else dict()),
-            **(dict(format=datatype) if datatype in ['date-time'] else dict()),
-        }
-        for field, (datatype, description, enum) in d.items()
-    }
-
-
-def instruction_schema(**members: dict[str, dict[str, ...]]):
-    return {
-        "type": "object",
-        "description": env.schema.PRIMARY_INSTRUCTION,
-        "properties": {
-            **__ocr(),
+        type: object,
+        properties: {
+            **__ocr(locale),
             **__meta(),
-            **__health(),
-            **__product(members)
-        }
+
+            "medical": {
+                type: object,
+                description: "`medical` section enabled when `meta.content`==`medical`; null otherwise.",
+                properties: {
+                    "name": {
+                        type: string
+                    }
+                }
+            },
+
+            "product": {
+                type: object,
+                description: "`product` section enabled when `meta.content`!=`medical`; null otherwise.",
+                properties: {
+                    "name": {
+                        type: string
+                    }
+                }
+            },
+
+            **__feedback(),
+        },
     }
 
 
-def __ocr():
+def __localize(_ln_):
+    return {
+        properties: {
+            "--": {
+                type: string,
+                required: true,
+                description: "In original language. Replace key `--` with language name."
+            },
+            _ln_: {
+                type: string,
+                required: true,
+                description: f"Translate from value of key `--` to {_ln_}."
+            },
+        },
+    }
+
+
+def __ocr(locale):
     return {
         "ocr": {
-            "type": "string",
-            "description": env.schema.OCR_INSTRUCTION,
-        }
+            type: array,
+            required: true,
+            items: {
+                type: object,
+                required: true,
+                description: "Complete OCR; split page-wise.",
+                **__localize(locale),
+            },
+        },
     }
 
 
 def __meta():
     return {
         "meta": {
-            "type": "object",
-            "description": env.schema.META_INSTRUCTION,
-            "properties": __format_schema_properties(env.schema.META_INDICATORS),
-        }
-    }
-
-
-def __health():
-    return {
-        "health": {
-            "type": "object",
-            "description": env.schema.HEALTH_INSTRUCTION,
-            "properties": {
-                "report": {
-                    "type": "object",
-                    "description": env.schema.HEALTH_REPORT_INSTRUCTION,
-                    "properties": {
-                        **__format_schema_properties(env.schema.HEALTH_REPORT_INDICATORS)
-                    }
+            type: object,
+            properties: {
+                "content": {
+                    type: string,
+                    enum: ["medical", "grocery", "cosmetic", "pharmaceutical", "null"]
                 },
-                "demography": {
-                    "type": "object",
-                    "description": env.schema.HEALTH_DEMOGRAPTHY_INSTRUCTION,
-                    "properties": {
-                        **__format_schema_properties(env.schema.HEALTH_DEMOGRAPTHY_INDICATORS)
-                    }
-                },
-                "vitals": {
-                    "type": "object",
-                    "description": env.schema.HEALTH_VITALS_INSTRUCTION,
-                    "properties": {
-                        **__format_schema_properties(env.schema.HEALTH_VITALS_INDICATORS)
-                    }
-                },
-                "issues": {
-                    "type": "array",
-                    "description": env.schema.HEALTH_CONCERNS_INSTRUCTION,
-                    "items": {
-                        "type": "object",
-                        "description": env.schema.HEALTH_CONCERNS_ITEMS_INSTRUCTION,
-                        "properties": {
-                            **__format_schema_properties(env.schema.HEALTH_CONCERNS_ITEMS_INDICATORS),
-                            "precautions": {
-                                "type": "array",
-                                "description": env.schema.HEALTH_CONCERNS_ITEMS_PRECAUTIONS_INSTRUCTION,
-                                "items": {
-                                    "type": "object",
-                                    "description": env.schema.HEALTH_CONCERNS_ITEMS_PRECAUTIONS_INDICATORS_INSTRUCTION,
-                                    "properties": {
-                                        **__format_schema_properties(
-                                            env.schema.HEALTH_CONCERNS_INGREDIENT_INDICATORS)
-                                    }
-                                }
-                            }
-                        }
-                    }
+                "legibility": {
+                    type: number,
+                    minimum: 0,
+                    maximum: 1,
+                    multipleOf: 0.01,
+                    description: "How easy it was to read from the image."
                 }
             }
         }
     }
 
 
-def __product(members):
+def __feedback():
     return {
-        "product": {
-            "type": "object",
-            "description": env.schema.PRODUCT_INSTRUCTION,
-            "properties": {
-                "specific": {
-                    "type": "object",
-                    "description": env.schema.PRODUCT_SPECIFIC_INSTRUCTION,
-                    "properties": {
-                        member: {
-                            "type": "object",
-                            "description": env.schema.PRODUCT_SPECIFIC_MEMBER_INSTRUCTION.format(member=member,
-                                                                                                 vitals=vitals,
-                                                                                                 concerns=concerns),
-                            "properties": {
-                                concern: {
-                                    "type": "object",
-                                    "description": env.schema.PRODUCT_SPECIFIC_MEMBER_CONCERN_INSTRUCTION.format(
-                                        member=member, concern=concern),
-                                    "properties": {
-                                        "constituents": {
-                                            "type": "array",
-                                            "description": env.schema.CONSTITUENTS_INSTRUCTION.format(
-                                                concern=concern),
-                                            "items": {
-                                                "type": "object",
-                                                "description": env.schema.CONSTITUENTS_ITEM_INSTRUCTION.format(
-                                                    concern=concern),
-                                                "properties": __format_schema_properties(
-                                                    env.schema.CONSTITUENTS_ITEM_INDICATORS,
-                                                    member=member,
-                                                    concern=concern
-                                                )
-                                            }
-                                        },
-                                        **(
-                                            __format_schema_properties(
-                                                env.schema.PRODUCT_ITEM_INDICATORS,
-                                                concern=concern, member=member)
-                                        )
-                                    }
-                                } for concern, level in concerns.items()
-                            }
-                        } for member, (v, c) in members.items() if
-                        (vitals := members[member][v]) | (concerns := members[member][c])
-                    }
-                },
-                "generic": {
-                    "type": "object",
-                    "description": env.schema.PRODUCT_GENERIC_INSTRUCTION,
-                    "properties": {
-                        'allergens': {
-                            "type": "array",
-                            "description": env.schema.PRODUCT_ALLERGENS_INSTRUCTION,
-                            "items": {
-                                "type": "object",
-                                "description": env.schema.PRODUCT_ALLERGENS_ITEM_INSTRUCTION,
-                                "properties": {
-                                    "name": {
-                                        "type": "string"
-                                    },
-                                    "proportion": {
-                                        "type": "number"
-                                    },
-                                    "justification": {
-                                        "type": "string"
-                                    }
-                                }
-                            }
-                        },
-                        'acutes': {
-                            "type": "array",
-                            "description": env.schema.PRODUCT_ACUTES_INSTRUCTION,
-                            "items": {
-                                "type": "object",
-                                "description": env.schema.PRODUCT_ACUTES_ITEM_INSTRUCTION,
-                                "properties": {
-                                    "name": {
-                                        "type": "string"
-                                    },
-                                    "proportion": {
-                                        "type": "number"
-                                    },
-                                    "justification": {
-                                        "type": "string"
-                                    }
-                                }
-                            }
-                        },
-                        'chronics': {
-                            "type": "array",
-                            "description": env.schema.PRODUCT_CHRONICS_INSTRUCTION,
-                            "items": {
-                                "type": "object",
-                                "description": env.schema.PRODUCT_CHRONICS_ITEM_INSTRUCTION,
-                                "properties": {
-                                    "name": {
-                                        "type": "string"
-                                    },
-                                    "proportion": {
-                                        "type": "number"
-                                    },
-                                    "justification": {
-                                        "type": "string"
-                                    }
-                                }
-                            }
-                        }
-                    }
-                },
-                "verdict": {
-                    "type": "string",
-                    "description": "Your final verdict whether I should purchase this product or not considering the health issues and concerns or my family members."
-                },
-            }
+        "_feedback": {
+            type: string,
+            required: true,
+            description: "Were these instructions hard for you? Elaborate where you faced difficulty.",
         }
     }
 
 
 if __name__ == "__main__":
-    print(json.dumps(instruction_schema(
-        mother={
-            "vitals": {
-                "age": "65",
-                "sex": "female"
-            },
-            "concerns": {
-                "diabetes": 0.5,
-                "cholesterol": 0.9,
-            }
-        },
-    ), indent=4))
+    print(json.dumps(instruction_schema(), indent=4))
