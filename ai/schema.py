@@ -28,6 +28,25 @@ def instruction_schema(**members: dict[str, dict[str, ...]]):
     }
 
 
+def __ocr():
+    return {
+        "ocr": {
+            "type": "string",
+            "description": env.schema.OCR_INSTRUCTION,
+        }
+    }
+
+
+def __meta():
+    return {
+        "meta": {
+            "type": "object",
+            "description": env.schema.META_INSTRUCTION,
+            "properties": __format_schema_properties(env.schema.META_INDICATORS),
+        }
+    }
+
+
 def __health():
     return {
         "health": {
@@ -199,25 +218,6 @@ def __product(members):
                     "description": "Your final verdict whether I should purchase this product or not considering the health issues and concerns or my family members."
                 },
             }
-        }
-    }
-
-
-def __meta():
-    return {
-        "meta": {
-            "type": "object",
-            "description": env.schema.META_INSTRUCTION,
-            "properties": __format_schema_properties(env.schema.META_INDICATORS),
-        }
-    }
-
-
-def __ocr():
-    return {
-        "ocr": {
-            "type": "string",
-            "description": env.schema.OCR_INSTRUCTION,
         }
     }
 
