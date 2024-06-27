@@ -3,6 +3,7 @@ import itertools
 import json
 import logging
 import os
+import random
 from io import BytesIO
 from typing import Optional
 from urllib.parse import urlparse
@@ -16,13 +17,15 @@ import env
 
 _log = logging.getLogger(__name__)
 
-__keys = itertools.cycle(env.GEMINI_KEYS)
+__keys = env.GEMINI_KEYS
+random.shuffle(__keys)
+__keys = itertools.cycle(__keys)
 
 
 def __fix_response(response):
     genai.configure(api_key=next(__keys))
     response = genai.GenerativeModel(env.GEMINI_FLASH).generate_content(
-        ['auto fix json', response.text],
+        ['indent this json and fix excess or missing brackets', response.text],
         generation_config=GenerationConfig(
             temperature=0.0,
             top_k=0,
@@ -49,10 +52,11 @@ def gemini(schema: dict, image: str | Image.Image) -> dict:
     response = genai.GenerativeModel(env.GEMINI_PRO).generate_content(
         [prompt, image],
         generation_config=GenerationConfig(
-            temperature=0.25,
+            temperature=0.0,
             top_k=64,
-            top_p=0.95,
+            top_p=0.0,
             response_mime_type='application/json',
+            # response_schema=schema,
         ))
     response.resolve()
     _log.debug(response.text)
@@ -121,6 +125,3 @@ def __url_to_image(url_string: str) -> Optional[Image.Image]:
     except Exception as e:
         _log.debug(f"Error processing the image: {e}")
         return None
-
-
-
