@@ -27,9 +27,9 @@ def __fix_response(response):
     response = genai.GenerativeModel(env.GEMINI_FLASH).generate_content(
         ['indent this json and fix excess or missing brackets', response.text],
         generation_config=GenerationConfig(
-            temperature=0.0,
-            top_k=0,
-            top_p=0.0,
+            temperature=1,
+            top_k=128,
+            top_p=0.95,
             response_mime_type='application/json',
         ))
     response.resolve()

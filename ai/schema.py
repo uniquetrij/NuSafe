@@ -30,10 +30,9 @@ def instruction_schema(locale: str = 'hi', **members: dict[str, dict[str, ...]])
 
             **__medical(),
 
-            #
-            # **__retail(),
-            #
-            **__feedback(),
+            **__retail(members),
+
+            # **__feedback(),
         },
     }
 
@@ -89,9 +88,9 @@ def __meta():
                 },
                 "legibility": {
                     type: number,
-                    # minimum: 0,
-                    # maximum: 1,
-                    # multipleOf: 0.01,
+                    minimum: 0,
+                    maximum: 1,
+                    multipleOf: 0.01,
                     description: "Content readability from image."
                 },
             }
@@ -103,6 +102,7 @@ def __medical():
     return {
         "medical": {
             type: object,
+            description: "This section is enabled only when `meta.description`==`medical`; null otherwise.",
             properties: {
                 "date": {
                     type: string,
@@ -198,14 +198,135 @@ def __medical():
     }
 
 
-def __retail():
+def __retail(members):
     return {
         "retail": {
             type: object,
-            description: "product section enabled only when meta.content is not medical; null otherwise.",
+            description: "This section is enabled only when `meta.description`!=`medical`; null otherwise.",
             properties: {
-                "name": {
-                    type: string
+                "type": {
+                    type: string,
+                    enum: ["grocery", "cosmetic", "pharmaceutical"]
+                },
+                "generic": {
+                    type: object,
+                    description: "As a professional nutritionist and dietitian, prepare the generic disease profile "
+                                 "of this product, either explicit from its nutrients and/or ingredients, or implicit "
+                                 "based on your prior wisdom and medical knowledge.",
+                    properties: {
+                        "allergens": {
+                            type: array,
+                            items: {
+                                type: object,
+                                properties: {
+                                    "name": {
+                                        type: string
+                                    },
+                                    "proportion": {
+                                        type: number
+                                    },
+                                    "reason": {
+                                        type: string,
+                                    }
+                                }
+                            }
+                        },
+                        "chronic": {
+                            type: array,
+                            description: "Chronic diseases that may be aggravated by the nutrients "
+                                         "and/or ingredients present this product.",
+                            items: {
+                                type: array,
+                                items: {
+                                    type: object,
+                                    properties: {
+                                        "name": {
+                                            type: string
+                                        },
+                                        "proportion": {
+                                            type: number
+                                        },
+                                        "reason": {
+                                            type: string,
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        "acute": {
+                            type: array,
+                            description: "Acute diseases that may be aggravated by the nutrients "
+                                         "and/or ingredients present this product.",
+                            items: {
+                                type: array,
+                                items: {
+                                    type: object,
+                                    properties: {
+                                        "name": {
+                                            type: string
+                                        },
+                                        "proportion": {
+                                            type: number
+                                        },
+                                        "reason": {
+                                            type: string,
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "specific": {
+                    type: object,
+                    description: "As a professional nutritionist and dietitian, help me decide whether this product "
+                                 "is suitable for my family based on my family members' pre-existing health conditions "
+                                 "and your prior wisdom and medical knowledge.",
+                    properties: {
+                        member: {
+                            type: object,
+                            description: f"{member}'s vital signs are {vitals}.",
+                            properties: {
+                                concern: {
+                                    type: object,
+                                    description: f"{member} has {concern}.",
+                                    properties: {
+                                        "constituents": {
+                                            type: array,
+                                            items: {
+                                                type: object,
+                                                properties: {
+                                                    "name": {
+                                                        type: string
+                                                    },
+                                                    "proportion": {
+                                                        type: number
+                                                    },
+                                                    "criticality": {
+                                                        type: number
+                                                    }
+                                                }
+                                            }
+                                        },
+                                        **dict({
+                                            "risk": {
+                                                type: number
+                                            },
+                                            "justification": {
+                                                type: string
+                                            }
+                                        })
+                                    }
+                                } for concern, level in concerns.items()
+                            }
+                        } for member, (v, c) in members.items() if
+                        (vitals := members[member][v]) | (concerns := members[member][c])
+                    }
+                },
+                "verdict": {
+                    type: string,
+                    "description": "Your final verdict whether I should purchase this product or not considering "
+                                   "the health issues and concerns or my family members."
                 }
             }
         },
@@ -223,4 +344,35 @@ def __feedback():
 
 
 if __name__ == "__main__":
-    print(json.dumps(instruction_schema(), indent=4))
+    members = dict(
+
+        mother={
+            "vitals": {
+                "age": "65",
+                "sex": "female"
+            },
+            "concerns": {
+                "diabetes": 0.5,
+                "cholesterol": 0.9,
+            }
+        },
+        father={
+            "vitals": {
+                "age": "70",
+                "sex": "male"
+            },
+            "concerns": {
+                "hypertension": 1,
+            }
+        },
+        wife={
+            "vitals": {
+                "age": "25",
+                "sex": "female"
+            },
+            "concerns": {
+                "pregnant": 1,
+            }
+        },
+    )
+    print(json.dumps(instruction_schema(**members), indent=4))
