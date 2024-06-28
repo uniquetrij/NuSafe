@@ -1,5 +1,7 @@
 import json
 
+from langcodes import Language
+
 array = "array"
 boolean = "boolean"
 description = "description"
@@ -20,41 +22,33 @@ date = "date"
 integer = "integer"
 
 
-def instruction_schema(locale: str = 'hi', **members: dict[str, dict[str, ...]]):
+def instruction_schema(locale: str | None = None, **members: dict[str, dict[str, ...]]):
     return {
         type: object,
         properties: {
-            **__ocr(),
+            **__ocr(locale),
 
             **__meta(),
 
             **__medical(),
 
-            **__retail(members),
+            **__retail(locale, members),
 
             # **__feedback(),
         },
     }
 
 
-def __localize(locale):
+def __localize(source, target, locale):
     return {
-        properties: {
-            "<language-code>": {
-                type: string,
-                required: true,
-                description: "In original language. Update <language-code> appropriately."
-            },
-            locale: {
-                type: string,
-                required: true,
-                description: f"Translate to {locale}."
-            },
+        target: {
+            type: string,
+            description: f"As an expert linguist and translator, rewrite `{source}` in {Language.get(locale).display_name(locale)} language."
         },
-    }
+    } if locale else {}
 
 
-def __ocr():
+def __ocr(locale):
     return {
         "ocr": {
             type: object,
@@ -71,6 +65,7 @@ def __ocr():
                         description: "Format: 2 letters ISO 639-1."
                     },
                 },
+                **__localize('ocr.contents', f'content_l10n', locale)
             },
         },
     }
@@ -198,7 +193,7 @@ def __medical():
     }
 
 
-def __retail(members):
+def __retail(locale, members):
     return {
         "retail": {
             type: object,
@@ -325,9 +320,10 @@ def __retail(members):
                 },
                 "verdict": {
                     type: string,
-                    "description": "Your final verdict whether I should purchase this product or not considering "
-                                   "the health issues and concerns or my family members."
-                }
+                    description: "Your final verdict whether I should purchase this product or not considering "
+                                 "the health issues and concerns or my family members."
+                },
+                **__localize('retail.verdict', f'verdict_l10n', locale)
             }
         },
     }

@@ -28,7 +28,8 @@ def root():
 def lens():
     image = request.json.get('image', None)
     members = request.json.get('members', {})
-    text = ai.gemini(instruction_schema(**members), image)
+    locale = request.json.get('locale', None)
+    text = ai.gemini(instruction_schema(locale, **members), image)
 
     return text
 

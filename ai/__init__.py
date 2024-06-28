@@ -22,13 +22,13 @@ random.shuffle(__keys)
 __keys = itertools.cycle(__keys)
 
 
-def __fix_response(response):
+def __fix_response(response, schema):
     genai.configure(api_key=next(__keys))
     response = genai.GenerativeModel(env.GEMINI_FLASH).generate_content(
-        ['indent this json and fix excess or missing brackets', response.text],
+        [f'fix json following json schema <JSONSchema>{json.dumps(schema)}</JSONSchema>', response.text],
         generation_config=GenerationConfig(
             temperature=1,
-            top_k=128,
+            top_k=1024,
             top_p=0.95,
             response_mime_type='application/json',
         ))
@@ -52,9 +52,9 @@ def gemini(schema: dict, image: str | Image.Image) -> dict:
     response = genai.GenerativeModel(env.GEMINI_PRO).generate_content(
         [prompt, image],
         generation_config=GenerationConfig(
-            temperature=0.0,
+            temperature=0.5,
             top_k=64,
-            top_p=0.0,
+            top_p=0.95,
             response_mime_type='application/json',
             # response_schema=schema,
         ))
@@ -63,7 +63,7 @@ def gemini(schema: dict, image: str | Image.Image) -> dict:
     try:
         return json.loads(response.text)
     except json.decoder.JSONDecodeError as e:
-        return __fix_response(response)
+        return __fix_response(response, schema)
 
 
 def __is_path(string: str):
