@@ -13,6 +13,7 @@ import google.generativeai as genai
 import requests
 from PIL import Image
 from google.generativeai import GenerationConfig
+from jsonschema.validators import Draft7Validator
 from openai.lib.azure import AzureOpenAI
 
 import env
@@ -140,8 +141,17 @@ def __url_to_image(url_string: str) -> Optional[Image.Image]:
         return None
 
 
+def __path_to_base64(image_path):
+    with open(image_path, 'rb') as image_file:
+        return 'data:image;base64,' + base64.b64encode(image_file.read()).decode('utf-8')
+
+
 def openai(schema: dict, image: str | Image.Image) -> dict:
     prompt = f'Follow JSON schema. <JSONSchema>{json.dumps(schema)}</JSONSchema>'
+
+    if isinstance(image, str):
+        if __is_path(image):
+            image = __path_to_base64(image)
 
     client = AzureOpenAI(
         azure_endpoint=env.OPENAI_URL,
@@ -169,10 +179,48 @@ def openai(schema: dict, image: str | Image.Image) -> dict:
             }
         ],
         seed=5549,
-        temperature=0.8,
+        temperature=0,
         max_tokens=4096,
-        top_p=0.95,
+        top_p=0,
         response_format={"type": "json_object"}
     )
     _log.debug(response.choices[0].message.content)
-    return json.loads(response.choices[0].message.content)
+    return __remove_extra_keys(json.loads(response.choices[0].message.content), schema)
+
+
+def __flatten_nested_lists(value):
+    while isinstance(value, list) and len(value) == 1 and isinstance(value[0], list):
+        value = value[0]
+    return value
+
+
+def __remove_extra_keys(json_data, schema):
+    # Create a validator object
+    validator = Draft7Validator(schema)
+
+    # Get a list of all properties defined in the schema
+    schema_properties = set(schema.get('properties', {}).keys())
+
+    # Remove keys not defined in the schema
+    clean_data = {k: v for k, v in json_data.items() if k in schema_properties}
+
+    # Recursively clean nested objects
+    for k, v in clean_data.items():
+        # Flatten nested lists
+        v = __flatten_nested_lists(v)
+
+        # Handle if schema expects an object but found a list
+        if isinstance(v, list) and k in schema['properties'] and schema['properties'][k]['type'] == 'object':
+            # Unpack the list and use the first item if the schema expects an object
+            if v:
+                v = v[0]
+            else:
+                v = {}
+
+        # Recursively clean nested objects
+        if isinstance(v, dict) and k in schema['properties']:
+            clean_data[k] = __remove_extra_keys(v, schema['properties'][k])
+        else:
+            clean_data[k] = v
+
+    return clean_data
