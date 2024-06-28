@@ -22,19 +22,17 @@ random.shuffle(__keys)
 __keys = itertools.cycle(__keys)
 
 
-def __fix_json(json_str, schema=None):
-    json_str = json_str.strip()
+def __sanitise_json(json_str, schema=None):
     for i in range(5):
         try:
-            json.loads(json_str)
+            return json.loads(json_str)
         except json.decoder.JSONDecodeError as e:
             match e.msg:
                 case 'Extra data':
                     json_str = json_str[:-1].strip()
                 case "Expecting ',' delimiter":
-                    json_str = json_str + '}'.strip()
-
-    return json_str
+                    json_str = (json_str + '}').strip()
+    raise
 
 
 def gemini(schema: dict, image: str | Image.Image) -> dict:
@@ -61,10 +59,8 @@ def gemini(schema: dict, image: str | Image.Image) -> dict:
         ))
     response.resolve()
     _log.debug(response.text)
-    try:
-        return json.loads(response.text)
-    except json.decoder.JSONDecodeError as e:
-        return json.loads(__fix_json(response.text, schema))
+
+    return __sanitise_json(response.text, schema)
 
 
 def __is_path(string: str):

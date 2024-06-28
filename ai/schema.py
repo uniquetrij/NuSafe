@@ -325,7 +325,15 @@ def __retail(locale, members):
                     description: "Your final verdict whether I should purchase this product or not considering "
                                  "the health issues and concerns or my family members."
                 },
-                **__localize('retail.verdict', f'verdict.localised', locale)
+                **__localize('retail.verdict', f'verdict.localised', locale),
+                "score": {
+                    type: number,
+                    minimum: 0,
+                    maximum: 1,
+                    multipleOf: 0.01,
+                    description: "overall score, based on `retail.verdict`, whether I should purchase "
+                                 "this product or not. Score higher if purchase is recommended."
+                }
             }
         },
     }
