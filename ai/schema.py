@@ -256,40 +256,37 @@ def __retail(locale, members):
                             description: "Chronic diseases that may be aggravated by the nutrients "
                                          "and/or ingredients present this product.",
                             items: {
-                                type: array,
-                                items: {
-                                    type: object,
-                                    properties: {
-                                        "name": {
-                                            type: string
-                                        },
-                                        "constituents": {
-                                            type: array,
-                                            items: {
-                                                type: object,
-                                                properties: {
-                                                    "name": {
-                                                        type: string,
-                                                    },
-                                                    "proportion": {
-                                                        type: number,
-                                                        minimum: 0,
-                                                        maximum: 1,
-                                                        multipleOf: 0.0001,
-                                                        description: "Proportion of this constituent in product by weight."
-                                                    },
-                                                    "criticality": {
-                                                        type: number,
-                                                        minimum: 0,
-                                                        maximum: 1,
-                                                        multipleOf: 0.0001,
-                                                        description: "Criticality of this constituent in affecting health."
-                                                    },
-                                                    "reason": {
-                                                        type: string,
-                                                        description: "Reason for choosing this criticality rating."
-                                                    }
+                                type: object,
+                                properties: {
+                                    "name": {
+                                        type: string
+                                    },
+                                    "constituents": {
+                                        type: array,
+                                        items: {
+                                            type: object,
+                                            properties: {
+                                                "name": {
+                                                    type: string,
                                                 },
+                                                "proportion": {
+                                                    type: number,
+                                                    minimum: 0,
+                                                    maximum: 1,
+                                                    multipleOf: 0.0001,
+                                                    description: "Proportion of this constituent in product by weight."
+                                                },
+                                                "criticality": {
+                                                    type: number,
+                                                    minimum: 0,
+                                                    maximum: 1,
+                                                    multipleOf: 0.0001,
+                                                    description: "Criticality of this constituent in affecting health."
+                                                },
+                                                "reason": {
+                                                    type: string,
+                                                    description: "Reason for choosing this criticality rating."
+                                                }
                                             },
                                         },
                                     },
@@ -301,40 +298,37 @@ def __retail(locale, members):
                             description: "Acute diseases that may be aggravated by the nutrients "
                                          "and/or ingredients present this product.",
                             items: {
-                                type: array,
-                                items: {
-                                    type: object,
-                                    properties: {
-                                        "name": {
-                                            type: string
-                                        },
-                                        "constituents": {
-                                            type: array,
-                                            items: {
-                                                type: object,
-                                                properties: {
-                                                    "name": {
-                                                        type: string,
-                                                    },
-                                                    "proportion": {
-                                                        type: number,
-                                                        minimum: 0,
-                                                        maximum: 1,
-                                                        multipleOf: 0.0001,
-                                                        description: "Proportion of this constituent in product by weight."
-                                                    },
-                                                    "criticality": {
-                                                        type: number,
-                                                        minimum: 0,
-                                                        maximum: 1,
-                                                        multipleOf: 0.0001,
-                                                        description: "Criticality of this constituent in affecting health."
-                                                    },
-                                                    "reason": {
-                                                        type: string,
-                                                        description: "Reason for choosing this criticality rating."
-                                                    }
+                                type: object,
+                                properties: {
+                                    "name": {
+                                        type: string
+                                    },
+                                    "constituents": {
+                                        type: array,
+                                        items: {
+                                            type: object,
+                                            properties: {
+                                                "name": {
+                                                    type: string,
                                                 },
+                                                "proportion": {
+                                                    type: number,
+                                                    minimum: 0,
+                                                    maximum: 1,
+                                                    multipleOf: 0.0001,
+                                                    description: "Proportion of this constituent in product by weight."
+                                                },
+                                                "criticality": {
+                                                    type: number,
+                                                    minimum: 0,
+                                                    maximum: 1,
+                                                    multipleOf: 0.0001,
+                                                    description: "Criticality of this constituent in affecting health."
+                                                },
+                                                "reason": {
+                                                    type: string,
+                                                    description: "Reason for choosing this criticality rating."
+                                                }
                                             },
                                         },
                                     },
