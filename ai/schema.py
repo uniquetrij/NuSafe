@@ -43,7 +43,9 @@ def __localize(source, target, locale):
     return {
         target: {
             type: string,
-            description: f"As an expert linguist and translator, rewrite `{source}` in {Language.get(locale).display_name(locale)} language."
+            required: true,
+            description: f"As an expert linguist and translator, rewrite `{source}` "
+                         f"in {Language.get(locale).display_name(locale)}."
         },
     } if locale else {}
 
@@ -65,7 +67,7 @@ def __ocr(locale):
                         description: "Format: 2 letters ISO 639-1."
                     },
                 },
-                **__localize('ocr.contents', f'content_l10n', locale)
+                **__localize('ocr.contents', f'content.localised', locale)
             },
         },
     }
@@ -323,7 +325,7 @@ def __retail(locale, members):
                     description: "Your final verdict whether I should purchase this product or not considering "
                                  "the health issues and concerns or my family members."
                 },
-                **__localize('retail.verdict', f'verdict_l10n', locale)
+                **__localize('retail.verdict', f'verdict.localised', locale)
             }
         },
     }

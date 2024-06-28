@@ -22,18 +22,19 @@ random.shuffle(__keys)
 __keys = itertools.cycle(__keys)
 
 
-def __fix_response(response, schema):
-    genai.configure(api_key=next(__keys))
-    response = genai.GenerativeModel(env.GEMINI_FLASH).generate_content(
-        [f'fix json following json schema <JSONSchema>{json.dumps(schema)}</JSONSchema>', response.text],
-        generation_config=GenerationConfig(
-            temperature=1,
-            top_k=1024,
-            top_p=0.95,
-            response_mime_type='application/json',
-        ))
-    response.resolve()
-    return json.loads(response.text)
+def __fix_json(json_str, schema=None):
+    json_str = json_str.strip()
+    for i in range(5):
+        try:
+            json.loads(json_str)
+        except json.decoder.JSONDecodeError as e:
+            match e.msg:
+                case 'Extra data':
+                    json_str = json_str[:-1].strip()
+                case "Expecting ',' delimiter":
+                    json_str = json_str + '}'.strip()
+
+    return json_str
 
 
 def gemini(schema: dict, image: str | Image.Image) -> dict:
@@ -52,9 +53,9 @@ def gemini(schema: dict, image: str | Image.Image) -> dict:
     response = genai.GenerativeModel(env.GEMINI_PRO).generate_content(
         [prompt, image],
         generation_config=GenerationConfig(
-            temperature=0.5,
+            temperature=0,
             top_k=64,
-            top_p=0.95,
+            top_p=0,
             response_mime_type='application/json',
             # response_schema=schema,
         ))
@@ -63,7 +64,7 @@ def gemini(schema: dict, image: str | Image.Image) -> dict:
     try:
         return json.loads(response.text)
     except json.decoder.JSONDecodeError as e:
-        return __fix_response(response, schema)
+        return json.loads(__fix_json(response.text, schema))
 
 
 def __is_path(string: str):
