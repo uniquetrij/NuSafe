@@ -26,12 +26,14 @@ def root():
 
 @app.route('/lens', methods=['POST'])
 def lens():
+    _log.debug(request.json)
     image = request.json.get('image', None)
-    members = request.json.get('members', {})
+    members = request.json.get('members', {}) or {}
     locale = request.json.get('locale', None)
-    text = ai.gemini(instruction_schema(locale, **members), image)
-
-    return text
+    try:
+        return ai.openai(instruction_schema(locale, **members), image)
+    except Exception as e:
+        return {'ERROR': str(e)}
 
 
 if __name__ == '__main__':

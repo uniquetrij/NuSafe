@@ -45,7 +45,7 @@ def __localize(source, target, locale):
             type: string,
             required: true,
             description: f"As an expert linguist and translator, rewrite `{source}` "
-                         f"in {Language.get(locale).display_name(locale)}."
+                         f"in {Language.get(locale).display_name()}."
         },
     } if locale else {}
 
@@ -90,8 +90,8 @@ def __meta():
                     multipleOf: 0.01,
                     description: "Content readability from image."
                 },
-            }
-        }
+            },
+        },
     }
 
 
@@ -219,14 +219,37 @@ def __retail(locale, members):
                                     "name": {
                                         type: string
                                     },
-                                    "proportion": {
-                                        type: number
+                                    "constituents": {
+                                        type: array,
+                                        items: {
+                                            type: object,
+                                            properties: {
+                                                "name": {
+                                                    type: string,
+                                                },
+                                                "proportion": {
+                                                    type: number,
+                                                    minimum: 0,
+                                                    maximum: 1,
+                                                    multipleOf: 0.0001,
+                                                    description: "Proportion of this constituent in product by weight."
+                                                },
+                                                "criticality": {
+                                                    type: number,
+                                                    minimum: 0,
+                                                    maximum: 1,
+                                                    multipleOf: 0.0001,
+                                                    description: "Criticality of this constituent in affecting health."
+                                                },
+                                                "reason": {
+                                                    type: string,
+                                                    description: "Reason for choosing this criticality rating."
+                                                }
+                                            },
+                                        },
                                     },
-                                    "reason": {
-                                        type: string,
-                                    }
-                                }
-                            }
+                                },
+                            },
                         },
                         "chronic": {
                             type: array,
@@ -240,15 +263,38 @@ def __retail(locale, members):
                                         "name": {
                                             type: string
                                         },
-                                        "proportion": {
-                                            type: number
+                                        "constituents": {
+                                            type: array,
+                                            items: {
+                                                type: object,
+                                                properties: {
+                                                    "name": {
+                                                        type: string,
+                                                    },
+                                                    "proportion": {
+                                                        type: number,
+                                                        minimum: 0,
+                                                        maximum: 1,
+                                                        multipleOf: 0.0001,
+                                                        description: "Proportion of this constituent in product by weight."
+                                                    },
+                                                    "criticality": {
+                                                        type: number,
+                                                        minimum: 0,
+                                                        maximum: 1,
+                                                        multipleOf: 0.0001,
+                                                        description: "Criticality of this constituent in affecting health."
+                                                    },
+                                                    "reason": {
+                                                        type: string,
+                                                        description: "Reason for choosing this criticality rating."
+                                                    }
+                                                },
+                                            },
                                         },
-                                        "reason": {
-                                            type: string,
-                                        }
-                                    }
-                                }
-                            }
+                                    },
+                                },
+                            },
                         },
                         "acute": {
                             type: array,
@@ -262,17 +308,40 @@ def __retail(locale, members):
                                         "name": {
                                             type: string
                                         },
-                                        "proportion": {
-                                            type: number
+                                        "constituents": {
+                                            type: array,
+                                            items: {
+                                                type: object,
+                                                properties: {
+                                                    "name": {
+                                                        type: string,
+                                                    },
+                                                    "proportion": {
+                                                        type: number,
+                                                        minimum: 0,
+                                                        maximum: 1,
+                                                        multipleOf: 0.0001,
+                                                        description: "Proportion of this constituent in product by weight."
+                                                    },
+                                                    "criticality": {
+                                                        type: number,
+                                                        minimum: 0,
+                                                        maximum: 1,
+                                                        multipleOf: 0.0001,
+                                                        description: "Criticality of this constituent in affecting health."
+                                                    },
+                                                    "reason": {
+                                                        type: string,
+                                                        description: "Reason for choosing this criticality rating."
+                                                    }
+                                                },
+                                            },
                                         },
-                                        "reason": {
-                                            type: string,
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
+                                    },
+                                },
+                            },
+                        },
+                    },
                 },
                 "specific": {
                     type: object,
@@ -331,7 +400,7 @@ def __retail(locale, members):
                     minimum: 0,
                     maximum: 1,
                     multipleOf: 0.01,
-                    description: "overall score, based on `retail.verdict`, whether I should purchase "
+                    description: "Overall score, based on `retail.verdict`, whether I should purchase "
                                  "this product or not. Score higher if purchase is recommended."
                 }
             }

@@ -4,6 +4,7 @@ import json
 import logging
 import os
 import random
+import re
 from io import BytesIO
 from typing import Optional
 from urllib.parse import urlparse
@@ -12,6 +13,7 @@ import google.generativeai as genai
 import requests
 from PIL import Image
 from google.generativeai import GenerationConfig
+from openai.lib.azure import AzureOpenAI
 
 import env
 
@@ -22,17 +24,28 @@ random.shuffle(__keys)
 __keys = itertools.cycle(__keys)
 
 
-def __sanitise_json(json_str, schema=None):
-    for i in range(5):
-        try:
-            return json.loads(json_str)
-        except json.decoder.JSONDecodeError as e:
-            match e.msg:
-                case 'Extra data':
-                    json_str = json_str[:-1].strip()
-                case "Expecting ',' delimiter":
-                    json_str = (json_str + '}').strip()
-    raise
+def __fix_json(json_str, schema):
+    balance = 0
+    for i in range(len(json_str)):
+        if json_str[i] == '{':
+            balance += 1
+        if json_str[i] == '}':
+            balance -= 1
+            if balance == 0:
+                return json_str[:i] + '}'
+    if balance > 0:
+        return json_str + '}' * balance
+
+
+def __sanitise_schema(schema):
+    keys_to_remove = ["minimum", "maximum", "enum", "multipleOf", "required", "format"]
+
+    if isinstance(schema, dict):
+        return {k: __sanitise_schema(v) for k, v in schema.items() if k not in keys_to_remove}
+    elif isinstance(schema, list):
+        return [__sanitise_schema(item) for item in schema]
+    else:
+        return schema
 
 
 def gemini(schema: dict, image: str | Image.Image) -> dict:
@@ -51,16 +64,19 @@ def gemini(schema: dict, image: str | Image.Image) -> dict:
     response = genai.GenerativeModel(env.GEMINI_PRO).generate_content(
         [prompt, image],
         generation_config=GenerationConfig(
-            temperature=0,
+            temperature=0.25,
             top_k=64,
-            top_p=0,
+            top_p=0.95,
             response_mime_type='application/json',
-            # response_schema=schema,
+            # response_schema=__sanitise_schema(schema),
         ))
     response.resolve()
     _log.debug(response.text)
-
-    return __sanitise_json(response.text, schema)
+    text = re.sub(r'\\([^"\\/bfnrt])', r'\\\\\1', response.text)
+    try:
+        return json.loads(text)
+    except json.decoder.JSONDecodeError:
+        return json.loads(__fix_json(text, schema))
 
 
 def __is_path(string: str):
@@ -122,3 +138,41 @@ def __url_to_image(url_string: str) -> Optional[Image.Image]:
     except Exception as e:
         _log.debug(f"Error processing the image: {e}")
         return None
+
+
+def openai(schema: dict, image: str | Image.Image) -> dict:
+    prompt = f'Follow JSON schema. <JSONSchema>{json.dumps(schema)}</JSONSchema>'
+
+    client = AzureOpenAI(
+        azure_endpoint=env.OPENAI_URL,
+        api_key=env.OPENAI_KEYS[0],
+        api_version=env.OPENAI_VERSION
+    )
+
+    response = client.chat.completions.create(
+        model=env.OPENAI_MODEL,
+        messages=[
+            {
+                "role": "user",
+                "content": [
+                    {
+                        "type": "text",
+                        "text": prompt
+                    },
+                    {
+                        "type": "image_url",
+                        "image_url": {
+                            "url": image,
+                        },
+                    },
+                ],
+            }
+        ],
+        seed=5549,
+        temperature=0.8,
+        max_tokens=4096,
+        top_p=0.95,
+        response_format={"type": "json_object"}
+    )
+    _log.debug(response.choices[0].message.content)
+    return json.loads(response.choices[0].message.content)
