@@ -54,18 +54,27 @@ async def __on_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.effective_chat.send_chat_action(ChatAction.TYPING)
     photo_file: File = await update.message.photo[-1].get_file()
     result: dict = ai.openai(instruction_schema(), photo_file.file_path)
-    message = f'''{result['meta']['description'].capitalize()}\n'''
 
-    message += '''\n__**Allergens Present**__\n'''
+    if result['meta']['description']:
+        message = f'''Type: {result['meta']['description'].capitalize()}\n'''
+        message += escape_markdown(f'''Quality: {int(result['meta']['legibility'] * 100)}%\n''', 2)
+        if result['meta']['description'] != 'medical':
+            message += '''\n__**Allergens Present**__\n'''
 
-    for i, item in enumerate(result['retail']['generic']['allergens']):
-        message += escape_markdown(f'''{i + 1}. {item['name'].capitalize()}\n''', 2)
+            for i, item in enumerate(result['retail']['generic']['allergens']):
+                message += escape_markdown(f'''{i + 1}. {item['name'].capitalize()}\n''', 2)
 
-    message += '''\n__**Health Concerns**__\n'''
+            message += '''\n__**Health Concerns**__\n'''
 
-    for i, item in enumerate(result['retail']['generic']['chronic'] + result['retail']['generic']['acute']):
-        message += escape_markdown(f'''{i + 1}. {item['name'].capitalize()}\n''', 2)
+            for i, item in enumerate(result['retail']['generic']['chronic'] + result['retail']['generic']['acute']):
+                message += escape_markdown(f'''{i + 1}. {item['name'].capitalize()}\n''', 2)
+        else:
+            message += '''\n__**Take Precautions**__\n'''
 
+            for i, item in enumerate(result['medical']['precautions']):
+                message += escape_markdown(f'''{i + 1}. {item['name'].capitalize()}\n''', 2)
+    else:
+        message = "Sorry, I couldn't recognize the image\."
     await update.effective_message.reply_text(
         text=message,
         parse_mode=ParseMode.MARKDOWN_V2

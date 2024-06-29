@@ -80,7 +80,8 @@ def __meta():
             properties: {
                 "description": {
                     type: string,
-                    description: "Content description of image.",
+                    description: "Content description of image, whether it contains medical information "
+                                 "or a retail product (grocery, cosmetic, or pharmaceutical); null if none match.",
                     enum: ["medical", "grocery", "cosmetic", "pharmaceutical"]
                 },
                 "legibility": {
